@@ -5,8 +5,11 @@ use work.microcode_instructions.all;
 use work.assembly_instructions.all;
 
 entity fake_memory is
-   port (clk : in STD_LOGIC;
-         dummy : out STD_LOGIC);
+    port(address	: in STD_LOGIC_VECTOR(7 downto 0);
+        clock		: in STD_LOGIC := '1';
+        data		: in STD_LOGIC_VECTOR(15 downto 0);
+        wren		: in STD_LOGIC;
+        q		    : out STD_LOGIC_VECTOR(15 downto 0));
 end fake_memory;
 
 architecture fake of fake_memory is
@@ -33,10 +36,13 @@ architecture fake of fake_memory is
           others=>(NOP & R0 & R0 & R0 & Tail3));
 
 begin
-    dd : process(clk)
+    process (clock, address, data, wren)
     begin
-        if rising_edge(clk) then
-            dummy <= not clk;
+        if rising_edge(clock) then
+            if wren = '1' then
+                RAM(to_integer(unsigned(address))) <= data;
+            end if;
         end if;
+        q <= RAM(to_integer(unsigned(address)));
     end process;
 end fake;
