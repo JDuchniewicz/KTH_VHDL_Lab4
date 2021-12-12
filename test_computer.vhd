@@ -52,42 +52,42 @@ begin
         --TODO: write a testbench that will go over all the instructions and test if the program and simulation results are in accordance (for a several number of cycles)
         -- kickoff at mem address 0x0
         assert (t_address = "0000000000000001") report "I1 does not work!" severity failure;
-        assert (t_rf_mem[5] = x"FF00") report "R5 has wrong value!" severity failure;
+        assert (t_rf_mem(5) = x"FF00") report "R5 has wrong value!" severity failure;
         report "I1 works OK";
 
         wait for 40 ns;
         assert (t_address = "0000000000000010") report "I2 does not work!" severity failure;
-        assert (t_rf_mem[5] = x"FE00") report "R5 has wrong value!" severity failure;
+        assert (t_rf_mem(5) = x"FE00") report "R5 has wrong value!" severity failure;
         report "I2 works OK";
 
         wait for 40 ns;
         assert (t_address = "0000000000000011") report "I3 does not work!" severity failure;
-        assert (t_rf_mem[5] = x"FC00") report "R5 has wrong value!" severity failure;
+        assert (t_rf_mem(5) = x"FC00") report "R5 has wrong value!" severity failure;
         report "I3 works OK";
 
         wait for 40 ns;
         assert (t_address = "0000000000000100") report "I4 does not work!" severity failure;
-        assert (t_rf_mem[5] = x"F800") report "R5 has wrong value!" severity failure;
+        assert (t_rf_mem(5) = x"F800") report "R5 has wrong value!" severity failure;
         report "I4 works OK";
 
         wait for 40 ns;
         assert (t_address = "0000000000000101") report "I5 does not work!" severity failure;
-        assert (t_rf_mem[5] = x"F000") report "R5 has wrong value!" severity failure;
+        assert (t_rf_mem(5) = x"F000") report "R5 has wrong value!" severity failure;
         report "I5 works OK";
 
         wait for 40 ns;
         assert (t_address = "0000000000000110") report "I6 does not work!" severity failure;
-        assert (t_rf_mem[6] = x"0020") report "R6 has wrong value!" severity failure;
+        assert (t_rf_mem(6) = x"0020") report "R6 has wrong value!" severity failure;
         report "I6 works OK";
 
         wait for 40 ns;
         assert (t_address = "0000000000000111") report "I7 does not work!" severity failure;
-        assert (t_rf_mem[6] = x"0003") report "R3 has wrong value!" severity failure;
+        assert (t_rf_mem(6) = x"0003") report "R3 has wrong value!" severity failure;
         report "I7 works OK";
 
         wait for 40 ns;
         assert (t_address = "0000000000001000") report "I8 does not work!" severity failure;
-        assert (t_rf_mem[6] = x"0003") report "R3 has wrong value!" severity failure;
+        assert (t_rf_mem(6) = x"0003") report "R3 has wrong value!" severity failure;
         report "I7 works OK";
     end process;
 
