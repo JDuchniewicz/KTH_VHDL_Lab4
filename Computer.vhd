@@ -45,8 +45,8 @@ architecture behav of Computer is
     --signal s_legal_address : STD_LOGIC_VECTOR(15 downto 0);
     --signal s_rden : STD_LOGIC;
     signal s_mem_wren : STD_LOGIC;
-    signal s_gpio_wren : STD_LOGIC;
-    signal s_gpio_rden : STD_LOGIC;
+    --signal s_gpio_wren : STD_LOGIC;
+    --signal s_gpio_rden : STD_LOGIC;
 
     signal s_Dout : STD_LOGIC_VECTOR(15 downto 0);
     signal s_Address : STD_LOGIC_VECTOR(15 downto 0); -- log the full address
@@ -71,8 +71,8 @@ begin
     gpios : GPIO generic map(N => 8)
                  port map(clk => clk,
                           rst => reset,
-                          IE => s_gpio_wren,
-                          OE => s_gpio_rden,
+                          IE => '1',
+                          OE => '1',
                           Din => s_Dout(7 downto 0),
                           Dout => PIO);
 
@@ -88,13 +88,13 @@ begin
                 s_mem_wren <= '0';
             end if;
 
-            if s_Address = X"F000" then
-                s_gpio_wren <= '1';
-                s_gpio_rden <= '1';
-            else
-                s_gpio_wren <= '0'; -- TODO; wth? how to control them?
-                s_gpio_rden <= '0';
-            end if;
+            --if s_Address = X"F000" then --output GPIO all the time, this seems to be broken in the lab manual
+            --    s_gpio_wren <= '1';
+            --    s_gpio_rden <= '1';
+            --else
+            --    s_gpio_wren <= '0'; -- TODO; wth? how to control them?
+            --    s_gpio_rden <= '0';
+            --end if;
         end if;
     end process;
 
