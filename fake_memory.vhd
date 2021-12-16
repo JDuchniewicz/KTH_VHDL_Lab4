@@ -29,7 +29,7 @@ architecture fake of fake_memory is
           (iSUB & R0 & R0 & R1 & Tail3),
           (BRZ & X"003"),
           (NOP & Tail3 & Tail3 & Tail3 & Tail3),
-          (BRA & X"0FC"),
+          (BRA & X"FFC"),
           (ST & Tail3 & R6 & R2 & Tail3),
           (ST & Tail3 & R5 & R2 & Tail3),
           (BRA & X"000"),

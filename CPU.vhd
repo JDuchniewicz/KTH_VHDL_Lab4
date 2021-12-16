@@ -119,7 +119,7 @@ begin
             s_uPC <= (others => '0');
             s_IR <= (others => '0');
             --s_DatapathOut <= (others => '0'); -- this causes latches
-            s_RW <= '0';
+            s_RW <= '1'; -- READ
             s_flag <= '0';
             r_Z_Flag <= '0';
             r_N_Flag <= '0';

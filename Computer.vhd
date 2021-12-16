@@ -51,7 +51,9 @@ architecture behav of Computer is
     signal s_Dout : STD_LOGIC_VECTOR(15 downto 0);
     signal s_Address : STD_LOGIC_VECTOR(15 downto 0); -- log the full address
     signal s_q : STD_LOGIC_VECTOR(15 downto 0);
+    signal r_q : STD_LOGIC_VECTOR(15 downto 0);
     signal s_RW : STD_LOGIC;
+    signal b_writeCycleDelay : INTEGER;
 
 begin
 
@@ -63,7 +65,7 @@ begin
 
     cpu_1 : CPU port map(clk => clk,
                          reset => reset,
-                         Din => s_q,
+                         Din => r_q,
                          address => s_Address,
                          Dout => s_Dout,
                          RW => s_RW);
@@ -79,22 +81,33 @@ begin
     process(clk, reset)
     begin
         if reset = '1' then
-
+            b_writeCycleDelay <= 0;
         elsif rising_edge(clk) then
-            -- write the memory if address inside boundaries AND a write requested by CPU
+            -- don't read new value of q for 2 cycles (until it is safely secured in the memory)
+            if s_mem_wren = '1' then
+                b_writeCycleDelay <= 1;
+            elsif b_writeCycleDelay = 1 then
+                b_writeCycleDelay <= 2;
+            else
+                b_writeCycleDelay <= 0;
+            end if;
+        end if;
+    end process;
+
+    process(s_Address, s_RW, reset, s_q, b_writeCycleDelay)
+    begin
+        if reset = '0' then
             if s_Address >= X"0000" and s_Address <= X"00FF" and s_RW = '0' then
                 s_mem_wren <= '1';
+                r_q <= r_q;
             else
                 s_mem_wren <= '0';
+                if b_writeCycleDelay > 0 and b_writeCycleDelay < 3 then -- a quite ugly hack to stall 2 cycles of reading by the CPU and keep the old value of instruction for ST instr
+                    r_q <= r_q;
+                else
+                    r_q <= s_q;
+                end if;
             end if;
-
-            --if s_Address = X"F000" then --output GPIO all the time, this seems to be broken in the lab manual
-            --    s_gpio_wren <= '1';
-            --    s_gpio_rden <= '1';
-            --else
-            --    s_gpio_wren <= '0'; -- TODO; wth? how to control them?
-            --    s_gpio_rden <= '0';
-            --end if;
         end if;
     end process;
 
