@@ -51,7 +51,8 @@ architecture behav of Computer is
     signal s_Dout : STD_LOGIC_VECTOR(15 downto 0);
     signal s_Address : STD_LOGIC_VECTOR(15 downto 0); -- log the full address
     signal s_q : STD_LOGIC_VECTOR(15 downto 0);
-    signal r_q : STD_LOGIC_VECTOR(15 downto 0);
+    signal s_q_choice : STD_LOGIC_VECTOR(15 downto 0);
+    signal r_q, r_q_2, r_q_3 : STD_LOGIC_VECTOR(15 downto 0);
     signal s_RW : STD_LOGIC;
     signal s_ST_instr_served : STD_LOGIC;
     signal b_writeCycleDelay : INTEGER;
@@ -66,7 +67,7 @@ begin
 
     cpu_1 : CPU port map(clk => clk,
                          reset => reset,
-                         Din => r_q,
+                         Din => s_q_choice,
                          address => s_Address,
                          Dout => s_Dout,
                          RW => s_RW);
@@ -83,6 +84,9 @@ begin
     begin
         if reset = '1' then
             b_writeCycleDelay <= 0;
+			r_q <= (others => '0');
+			r_q_2 <= (others => '0');
+			r_q_3 <= (others => '0');
         elsif rising_edge(clk) then
             -- don't read new value of q for 2 cycles (until it is safely secured in the memory)
             if s_ST_instr_served = '1' then
@@ -92,29 +96,38 @@ begin
             else
                 b_writeCycleDelay <= 0;
             end if;
+			r_q <= s_q;
+			r_q_2 <= r_q;
+			r_q_3 <= r_q_2; -- remember last two values
         end if;
     end process;
 
-    process(s_Address, s_RW, reset, s_q, b_writeCycleDelay)
+    process(s_Address, s_RW, reset, s_q, r_q, r_q_2, r_q_3, b_writeCycleDelay)
     begin
         if reset = '0' then
-            if s_RW = '0' then
+			if s_RW = '0' then
                 if s_Address >= X"0000" and s_Address <= X"00FF" then
                     s_mem_wren <= '1';
                 else
                     s_mem_wren <= '0';
                 end if;
                 s_ST_instr_served <= '1';
-                r_q <= r_q;
+				s_q_choice <= r_q;
             else
                 s_mem_wren <= '0';
                 s_ST_instr_served <= '0';
-                if b_writeCycleDelay > 0 and b_writeCycleDelay < 3 then -- a quite ugly hack to stall 2 cycles of reading by the CPU and keep the old value of instruction for ST instr
-                    r_q <= r_q;
+				if b_writeCycleDelay = 1 then
+					s_q_choice <= r_q_2;
+				elsif b_writeCycleDelay = 2 then
+					s_q_choice <= r_q_3;
                 else
-                    r_q <= s_q;
+                    s_q_choice <= s_q;
                 end if;
-            end if;
+			end if;
+        else
+			s_q_choice <= (others => '0');
+            s_mem_wren <= '0';
+            s_ST_instr_served <= '0';
         end if;
     end process;
 
