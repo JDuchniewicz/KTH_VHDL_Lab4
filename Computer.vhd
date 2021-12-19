@@ -53,6 +53,7 @@ architecture behav of Computer is
     signal s_q : STD_LOGIC_VECTOR(15 downto 0);
     signal r_q : STD_LOGIC_VECTOR(15 downto 0);
     signal s_RW : STD_LOGIC;
+    signal s_ST_instr_served : STD_LOGIC;
     signal b_writeCycleDelay : INTEGER;
 
 begin
@@ -84,7 +85,7 @@ begin
             b_writeCycleDelay <= 0;
         elsif rising_edge(clk) then
             -- don't read new value of q for 2 cycles (until it is safely secured in the memory)
-            if s_mem_wren = '1' then
+            if s_ST_instr_served = '1' then
                 b_writeCycleDelay <= 1;
             elsif b_writeCycleDelay = 1 then
                 b_writeCycleDelay <= 2;
@@ -97,11 +98,17 @@ begin
     process(s_Address, s_RW, reset, s_q, b_writeCycleDelay)
     begin
         if reset = '0' then
-            if s_Address >= X"0000" and s_Address <= X"00FF" and s_RW = '0' then
-                s_mem_wren <= '1';
+            if s_RW = '0' then
+                if s_Address >= X"0000" and s_Address <= X"00FF" then
+                    s_mem_wren <= '1';
+                else
+                    s_mem_wren <= '0';
+                end if;
+                s_ST_instr_served <= '1';
                 r_q <= r_q;
             else
                 s_mem_wren <= '0';
+                s_ST_instr_served <= '0';
                 if b_writeCycleDelay > 0 and b_writeCycleDelay < 3 then -- a quite ugly hack to stall 2 cycles of reading by the CPU and keep the old value of instruction for ST instr
                     r_q <= r_q;
                 else

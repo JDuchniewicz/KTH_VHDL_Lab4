@@ -155,17 +155,18 @@ begin
         wait for 40 ns; -- ST
         assert (t_address = "0000000000010010") report "I11 ST does not work!" severity failure;
         wait for 40 ns; -- it will be there only after 2 cycles
-        -- it writes to nonexistent memory (truncates and writes to 0x00)
-        assert (t_RAM(32) = x"0000") report "RAM at address 32 has wrong value!" severity failure;
+        -- it writes to nonexistent memory (truncates and writes to 0x00) but does not do that due to address outside the wanted range
+        assert (t_RAM(0) = x"AB00") report "RAM at address 0 has wrong value! Should not update it!" severity failure;
         report "I11 ST works OK";
-
-        -- enable PIO and print R2 contents TODO: fix this
 
         wait for 40 ns; -- BRA
         assert (t_address = "0000000000010010") report "I12 BRA does not work!" severity failure;
         report "I12 BRA works OK";
         wait for 80 ns;
-        wait for 3000 ns;
+
+        report "All tests complete. The Computer now loops through NOPs";
+        wait for 300 ns;
+        assert (FALSE) report "Simulation end." severity failure;
     end process;
 
 
