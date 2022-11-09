@@ -13,16 +13,23 @@ end entity;
 
 architecture behav of Computer is
 
-    component fake_memory is
-	    port(address	: in STD_LOGIC_VECTOR(7 downto 0);
-            clock		: in STD_LOGIC := '1';
-            data		: in STD_LOGIC_VECTOR(15 downto 0);
-            wren		: in STD_LOGIC;
-            q		    : out STD_LOGIC_VECTOR(15 downto 0));
+    --component fake_memory is
+	--    port(address	: in STD_LOGIC_VECTOR(7 downto 0);
+    --        clock		: in STD_LOGIC := '1';
+    --        data		: in STD_LOGIC_VECTOR(15 downto 0);
+    --        wren		: in STD_LOGIC;
+    --        q		    : out STD_LOGIC_VECTOR(15 downto 0));
+    --end component;
+    component memory is
+        port (address : IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+              clock   : IN STD_LOGIC;
+              data    : IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+              wren    : IN STD_LOGIC;
+              q       : OUT STD_LOGIC_VECTOR (15 DOWNTO 0));
     end component;
 
     component CPU is
-        generic (M : INTEGER := 8;
+        generic (M : INTEGER := 3;
                  N : INTEGER := 16);
         port (clk     : IN STD_LOGIC;
               reset   : IN STD_LOGIC;
@@ -52,14 +59,20 @@ architecture behav of Computer is
     signal s_Address : STD_LOGIC_VECTOR(15 downto 0); -- log the full address
     signal s_q : STD_LOGIC_VECTOR(15 downto 0);
     signal s_q_choice : STD_LOGIC_VECTOR(15 downto 0);
-    signal r_q, r_q_2, r_q_3 : STD_LOGIC_VECTOR(15 downto 0);
+    signal r_q : STD_LOGIC_VECTOR(15 downto 0);
+    signal s_PIO : STD_LOGIC_VECTOR(7 downto 0);
     signal s_RW : STD_LOGIC;
     signal s_ST_instr_served : STD_LOGIC;
     signal b_writeCycleDelay : INTEGER;
 
 begin
 
-    mem : fake_memory port map(address => s_Address(7 downto 0),
+    --mem : fake_memory port map(address => s_Address(7 downto 0),
+    --                      clock => clk,
+    --                      data => s_Dout,
+    --                      wren => s_mem_wren,
+    --                      q => s_q);
+    mem : memory port map(address => s_Address(7 downto 0),
                           clock => clk,
                           data => s_Dout,
                           wren => s_mem_wren,
@@ -77,7 +90,7 @@ begin
                           rst => reset,
                           IE => '1',
                           OE => '1',
-                          Din => s_Dout(7 downto 0),
+                          Din => s_PIO,
                           Dout => PIO);
 
     process(clk, reset)
@@ -85,49 +98,55 @@ begin
         if reset = '1' then
             b_writeCycleDelay <= 0;
 			r_q <= (others => '0');
-			r_q_2 <= (others => '0');
-			r_q_3 <= (others => '0');
         elsif rising_edge(clk) then
             -- don't read new value of q for 2 cycles (until it is safely secured in the memory)
             if s_ST_instr_served = '1' then
                 b_writeCycleDelay <= 1;
+                r_q <= s_q;
             elsif b_writeCycleDelay = 1 then
                 b_writeCycleDelay <= 2;
+                r_q <= r_q;
+            elsif b_writeCycleDelay = 2 then
+                b_writeCycleDelay <= 3;
+                r_q <= r_q;
+            elsif b_writeCycleDelay = 3 then
+                b_writeCycleDelay <= 0;
+                r_q <= r_q;
             else
                 b_writeCycleDelay <= 0;
+                r_q <= s_q;
             end if;
-			r_q <= s_q;
-			r_q_2 <= r_q;
-			r_q_3 <= r_q_2; -- remember last two values
         end if;
     end process;
 
-    process(s_Address, s_RW, reset, s_q, r_q, r_q_2, r_q_3, b_writeCycleDelay)
+    process(s_Address, s_RW, reset, s_q, r_q, b_writeCycleDelay)
     begin
         if reset = '0' then
 			if s_RW = '0' then
                 if s_Address >= X"0000" and s_Address <= X"00FF" then
                     s_mem_wren <= '1';
+                elsif s_Address = X"F000" then
+                    s_PIO <= s_Dout(7 downto 0);
                 else
                     s_mem_wren <= '0';
                 end if;
                 s_ST_instr_served <= '1';
-				s_q_choice <= r_q;
+				s_q_choice <= s_q;
             else
                 s_mem_wren <= '0';
-                s_ST_instr_served <= '0';
-				if b_writeCycleDelay = 1 then
-					s_q_choice <= r_q_2;
-				elsif b_writeCycleDelay = 2 then
-					s_q_choice <= r_q_3;
+                if s_ST_instr_served = '1' or b_writeCycleDelay = 1 or b_writeCycleDelay = 2 or b_writeCycleDelay = 3 then
+                    s_q_choice <= r_q;
                 else
                     s_q_choice <= s_q;
                 end if;
+
+                s_ST_instr_served <= '0';
 			end if;
         else
 			s_q_choice <= (others => '0');
             s_mem_wren <= '0';
             s_ST_instr_served <= '0';
+            s_PIO <= (others => '0');
         end if;
     end process;
 

@@ -24,9 +24,11 @@ architecture computer_tb of test is
 
     signal t_address : STD_LOGIC_VECTOR(15 downto 0);
     signal t_Dout : STD_LOGIC_VECTOR(15 downto 0);
-    type rf_type is array(0 to 2**8 - 1) of std_logic_vector(15 downto 0);
-    signal t_rf_mem:rf_type;
-    signal t_RAM : rf_type;
+    type rf_type is array(0 to 8 - 1) of std_logic_vector(15 downto 0);
+    --type ram_type is array(2**8 - 1 downto 0) of std_logic_vector(15 downto 0);
+    signal t_rf_mem: rf_type;
+    --signal t_RAM : ram_type;
+    signal t_q : STD_LOGIC_VECTOR(15 downto 0);
 begin
 
     comp : Computer port map(clk => clk,
@@ -41,7 +43,8 @@ begin
        init_signal_spy("/test/comp/cpu_1/address","/t_address",1);
        init_signal_spy("/test/comp/cpu_1/Dout","/t_Dout",1);
        init_signal_spy("/test/comp/cpu_1/Datapath1/RF_1/mem","/t_rf_mem",1);
-       init_signal_spy("/test/comp/mem/RAM","/t_RAM",1);
+       --init_signal_spy("/test/comp/mem/altsyncram_component/MEMORY/m_mem_data_a","/t_RAM",1); unable to obtain the value in internal libraries at compile time
+       init_signal_spy("/test/comp/mem/q","/t_q",1);
        wait;
     end process spy_process;
 
@@ -53,7 +56,6 @@ begin
         reset <= '0';
         -- one instr takes 4 cycles
         wait for 60 ns;
-        --TODO: write a testbench that will go over all the instructions and test if the program and simulation results are in accordance (for a several number of cycles)
         -- kickoff at mem address 0x0 -- LDI
         assert (t_address = "0000000000000001") report "I0 LDI does not work!" severity failure;
         assert (t_rf_mem(5) = x"FF00") report "R5 has wrong value!" severity failure;
@@ -92,7 +94,7 @@ begin
         wait for 80 ns; -- ST instruction
         assert (t_address = "0000000000001000") report "I7 ST does not work!" severity failure;
         wait for 40 ns; -- it will be there only after 2 cycles
-        assert (t_RAM(32) = x"0003") report "RAM at address 32 has wrong value!" severity failure;
+        assert (t_q = x"0003") report "RAM at address 32 has wrong value!" severity failure;
         report "I7 ST works OK";
 
         wait for 40 ns; -- LDI instruction
@@ -149,14 +151,14 @@ begin
         wait for 80 ns; -- ST
         assert (t_address = "0000000000010001") report "I10 ST does not work!" severity failure;
         wait for 40 ns; -- it will be there only after 2 cycles
-        assert (t_RAM(32) = x"001C") report "RAM at address 32 has wrong value!" severity failure;
+        assert (t_q = x"001C") report "RAM at address 32 has wrong value!" severity failure;
         report "I10 ST works OK";
 
         wait for 40 ns; -- ST
         assert (t_address = "0000000000010010") report "I11 ST does not work!" severity failure;
         wait for 40 ns; -- it will be there only after 2 cycles
         -- it writes to nonexistent memory (truncates and writes to 0x00) but does not do that due to address outside the wanted range
-        assert (t_RAM(0) = x"AB00") report "RAM at address 0 has wrong value! Should not update it!" severity failure;
+        assert (t_q = x"AB00") report "RAM at address 0 has wrong value! Should not update it!" severity failure;
         report "I11 ST works OK";
 
         wait for 40 ns; -- BRA

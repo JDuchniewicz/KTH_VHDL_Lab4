@@ -5,7 +5,7 @@ use work.microcode_instructions.all;
 use work.assembly_instructions.all;
 
 entity CPU is
-    generic (M : INTEGER := 8;
+    generic (M : INTEGER := 3;
              N : INTEGER := 16);
     port (clk     : IN STD_LOGIC;
           reset   : IN STD_LOGIC;
