@@ -119,14 +119,16 @@ begin
         end if;
     end process;
 
-    process(s_Address, s_RW, reset, s_q, r_q, b_writeCycleDelay)
+    process(s_Address, s_RW, reset, s_q, r_q, b_writeCycleDelay, s_Dout, s_ST_instr_served, s_PIO)
     begin
         if reset = '0' then
+            s_PIO <= s_PIO;
 			if s_RW = '0' then
                 if s_Address >= X"0000" and s_Address <= X"00FF" then
                     s_mem_wren <= '1';
                 elsif s_Address = X"F000" then
                     s_PIO <= s_Dout(7 downto 0);
+                    s_mem_wren <= '0';
                 else
                     s_mem_wren <= '0';
                 end if;
