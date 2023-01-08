@@ -52,7 +52,7 @@ architecture behav of Computer is
     --signal s_legal_address : STD_LOGIC_VECTOR(15 downto 0);
     --signal s_rden : STD_LOGIC;
     signal s_mem_wren : STD_LOGIC;
-    --signal s_gpio_wren : STD_LOGIC;
+    signal s_gpio_wren : STD_LOGIC;
     --signal s_gpio_rden : STD_LOGIC;
 
     signal s_Dout : STD_LOGIC_VECTOR(15 downto 0);
@@ -60,7 +60,7 @@ architecture behav of Computer is
     signal s_q : STD_LOGIC_VECTOR(15 downto 0);
     signal s_q_choice : STD_LOGIC_VECTOR(15 downto 0);
     signal r_q : STD_LOGIC_VECTOR(15 downto 0);
-    signal s_PIO : STD_LOGIC_VECTOR(7 downto 0);
+    signal r_PIO : STD_LOGIC_VECTOR(7 downto 0);
     signal s_RW : STD_LOGIC;
     signal s_ST_instr_served : STD_LOGIC;
     signal b_writeCycleDelay : INTEGER;
@@ -88,9 +88,9 @@ begin
     gpios : GPIO generic map(N => 8)
                  port map(clk => clk,
                           rst => reset,
-                          IE => '1',
+                          IE => s_gpio_wren,
                           OE => '1',
-                          Din => s_PIO,
+                          Din => r_PIO,
                           Dout => PIO);
 
     process(clk, reset)
@@ -98,6 +98,7 @@ begin
         if reset = '1' then
             b_writeCycleDelay <= 0;
 			r_q <= (others => '0');
+            r_PIO <= (others => '0');
         elsif rising_edge(clk) then
             -- don't read new value of q for 2 cycles (until it is safely secured in the memory)
             if s_ST_instr_served = '1' then
@@ -116,18 +117,21 @@ begin
                 b_writeCycleDelay <= 0;
                 r_q <= s_q;
             end if;
+            r_PIO <= s_Dout(7 downto 0);
+
+            -- TODO: try moving everything to be clocked, as much as possible
         end if;
     end process;
 
-    process(s_Address, s_RW, reset, s_q, r_q, b_writeCycleDelay, s_Dout, s_ST_instr_served, s_PIO)
+    process(s_Address, s_RW, reset, s_q, r_q, b_writeCycleDelay, s_Dout, s_ST_instr_served)
     begin
+        s_gpio_wren <= '0';
         if reset = '0' then
-            s_PIO <= s_PIO;
 			if s_RW = '0' then
                 if s_Address >= X"0000" and s_Address <= X"00FF" then
                     s_mem_wren <= '1';
                 elsif s_Address = X"F000" then
-                    s_PIO <= s_Dout(7 downto 0);
+                    s_gpio_wren <= '1';
                     s_mem_wren <= '0';
                 else
                     s_mem_wren <= '0';
@@ -148,7 +152,6 @@ begin
 			s_q_choice <= (others => '0');
             s_mem_wren <= '0';
             s_ST_instr_served <= '0';
-            s_PIO <= (others => '0');
         end if;
     end process;
 
