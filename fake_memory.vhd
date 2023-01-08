@@ -42,7 +42,7 @@ begin
             if wren = '1' then
                 RAM(to_integer(unsigned(address))) <= data;
             end if;
+            q <= RAM(to_integer(unsigned(address)));
         end if;
-        q <= RAM(to_integer(unsigned(address)));
     end process;
 end fake;

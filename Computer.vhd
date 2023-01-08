@@ -13,13 +13,13 @@ end entity;
 
 architecture behav of Computer is
 
-    --component fake_memory is
-	--    port(address	: in STD_LOGIC_VECTOR(7 downto 0);
-    --        clock		: in STD_LOGIC := '1';
-    --        data		: in STD_LOGIC_VECTOR(15 downto 0);
-    --        wren		: in STD_LOGIC;
-    --        q		    : out STD_LOGIC_VECTOR(15 downto 0));
-    --end component;
+    component fake_memory is
+	    port(address	: in STD_LOGIC_VECTOR(7 downto 0);
+            clock		: in STD_LOGIC := '1';
+            data		: in STD_LOGIC_VECTOR(15 downto 0);
+            wren		: in STD_LOGIC;
+            q		    : out STD_LOGIC_VECTOR(15 downto 0));
+    end component;
     component memory is
         port (address : IN STD_LOGIC_VECTOR (7 DOWNTO 0);
               clock   : IN STD_LOGIC;
@@ -67,16 +67,16 @@ architecture behav of Computer is
 
 begin
 
-    --mem : fake_memory port map(address => s_Address(7 downto 0),
-    --                      clock => clk,
-    --                      data => s_Dout,
-    --                      wren => s_mem_wren,
-    --                      q => s_q);
-    mem : memory port map(address => s_Address(7 downto 0),
+    mem : fake_memory port map(address => s_Address(7 downto 0),
                           clock => clk,
                           data => s_Dout,
                           wren => s_mem_wren,
                           q => s_q);
+    --mem : memory port map(address => s_Address(7 downto 0),
+    --                      clock => clk,
+    --                      data => s_Dout,
+    --                      wren => s_mem_wren,
+    --                      q => s_q);
 
     cpu_1 : CPU port map(clk => clk,
                          reset => reset,

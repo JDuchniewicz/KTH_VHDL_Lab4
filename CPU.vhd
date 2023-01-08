@@ -112,58 +112,61 @@ begin
     Dout <= s_dout;
     address <= s_address;
 
-    registers : process(clk, reset, s_uInstr)
+    registers : process(clk)
     begin
-        if reset = '1' then
-            --s_uInstr <= init_instruction;
-            s_uPC <= (others => '0');
-            s_IR <= (others => '0');
-            --s_DatapathOut <= (others => '0'); -- this causes latches
-            s_RW <= '1'; -- READ
-            s_flag <= '0';
-            r_Z_Flag <= '0';
-            r_N_Flag <= '0';
-            r_O_Flag <= '0';
-            s_address <= (others => '0');
-            s_dout <= (others => '0');
-        elsif rising_edge(clk) then
-            -- uPC
-            if s_uPC = "11" then
-                s_uPC <= "00";
+        if rising_edge(clk) then
+            if reset = '1' then
+                --s_uInstr <= init_instruction;
+                s_uPC <= (others => '0');
+                s_IR <= (others => '0');
+                --s_DatapathOut <= (others => '0'); -- this causes latches
+                s_RW <= '1'; -- READ
+                s_flag <= '0';
+                r_Z_Flag <= '0';
+                r_N_Flag <= '0';
+                r_O_Flag <= '0';
+                s_address <= (others => '0');
+                s_dout <= (others => '0');
             else
-                s_uPC <= std_logic_vector(unsigned(s_uPC) + 1);
-            end if;
+                -- uPC
+                if s_uPC = "11" then
+                    s_uPC <= "00";
+                else
+                    s_uPC <= std_logic_vector(unsigned(s_uPC) + 1);
+                end if;
 
-            s_RW <= s_uInstr.RW;
-            case s_uInstr.LE is
-                when L_IR => s_IR <= Din;
-                                -- set flags for branch ops
-                                case s_IR_op is
-                                    when BRZ => s_flag <= r_Z_Flag;
-                                    when BRN => s_flag <= r_N_Flag;
-                                    when BRO => s_flag <= r_O_Flag;
-                                    when others => s_flag <= '0'; -- zero for other instructions?
-                                end case;
-                when L_FLAG =>
-                                -- preserve flags
-                                r_Z_Flag <= s_Z_Flag;
-                                r_N_Flag <= s_N_Flag;
-                                r_O_Flag <= s_O_Flag;
-                when L_ADDR => s_address <= s_DatapathOut;
-                when L_DOUT => s_dout <= s_DatapathOut; -- probably need to register them
-                when others => s_dout <= s_dout; -- TODO what?
-            end case;
-        else
-            -- retain old values (registers)
-            s_uPC <= s_uPC;
-            s_IR <= s_IR;
-            s_RW <= s_RW;
-            s_flag <= s_flag;
-            r_Z_Flag <= r_Z_Flag;
-            r_N_Flag <= r_N_Flag;
-            r_O_Flag <= r_O_Flag;
-            s_address <= s_address;
-            s_dout <= s_dout;
+                s_RW <= s_uInstr.RW;
+                s_IR <= s_IR;
+                case s_uInstr.LE is
+                    when L_IR => s_IR <= Din;
+                                    -- set flags for branch ops
+                                    case s_IR_op is
+                                        when BRZ => s_flag <= r_Z_Flag;
+                                        when BRN => s_flag <= r_N_Flag;
+                                        when BRO => s_flag <= r_O_Flag;
+                                        when others => s_flag <= '0'; -- zero for other instructions?
+                                    end case;
+                    when L_FLAG =>
+                                    -- preserve flags
+                                    r_Z_Flag <= s_Z_Flag;
+                                    r_N_Flag <= s_N_Flag;
+                                    r_O_Flag <= s_O_Flag;
+                    when L_ADDR => s_address <= s_DatapathOut;
+                    when L_DOUT => s_dout <= s_DatapathOut; -- probably need to register them
+                    when others => s_dout <= s_dout; -- TODO what?
+                end case;
+            end if;
+        --else
+        --    -- retain old values (registers)
+        --    s_uPC <= s_uPC;
+        --    s_IR <= s_IR;
+        --    s_RW <= s_RW;
+        --    s_flag <= s_flag;
+        --    r_Z_Flag <= r_Z_Flag;
+        --    r_N_Flag <= r_N_Flag;
+        --    r_O_Flag <= r_O_Flag;
+        --    s_address <= s_address;
+        --    s_dout <= s_dout;
         end if;
     end process;
 
@@ -177,7 +180,7 @@ begin
         end case;
     end process;
 
-    ir_op : process(Din, s_uPC, s_IR_op)
+    ir_op : process(Din, s_uPC, s_IR_op, s_IR)
     begin
         s_IR_op <= s_IR(N - 1 downto N - 4);
         if s_uPC /= "11" then
