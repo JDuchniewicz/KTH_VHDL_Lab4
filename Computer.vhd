@@ -64,6 +64,7 @@ architecture behav of Computer is
     signal s_RW : STD_LOGIC;
     signal s_ST_instr_served : STD_LOGIC;
     signal b_writeCycleDelay : INTEGER;
+    signal b_reset_ctr : INTEGER;
 
 begin
 
@@ -79,7 +80,7 @@ begin
     --                      q => s_q);
 
     cpu_1 : CPU port map(clk => clk,
-                         reset => reset,
+                         reset => b_delayed_rst,
                          Din => s_q_choice,
                          address => s_Address,
                          Dout => s_Dout,
@@ -99,7 +100,9 @@ begin
             b_writeCycleDelay <= 0;
 			r_q <= (others => '0');
             r_PIO <= (others => '0');
+            b_delayed_rst <= '1';
         elsif rising_edge(clk) then
+            b_delayed_rst <= reset;
             -- don't read new value of q for 2 cycles (until it is safely secured in the memory)
             if s_ST_instr_served = '1' then
                 b_writeCycleDelay <= 1;
@@ -119,14 +122,14 @@ begin
             end if;
             r_PIO <= s_Dout(7 downto 0);
 
-            -- TODO: try moving everything to be clocked, as much as possible
+            b_reset_ctr <= b_reset_ctr + 1;
         end if;
     end process;
 
-    process(s_Address, s_RW, reset, s_q, r_q, b_writeCycleDelay, s_Dout, s_ST_instr_served)
+    process(s_Address, s_RW, reset, s_q, r_q, b_writeCycleDelay, s_Dout, s_ST_instr_served, b_delayed_rst)
     begin
         s_gpio_wren <= '0';
-        if reset = '0' then
+        if b_delayed_rst = '0' then
 			if s_RW = '0' then
                 if s_Address >= X"0000" and s_Address <= X"00FF" then
                     s_mem_wren <= '1';
