@@ -64,7 +64,7 @@ architecture behav of Computer is
     signal s_RW : STD_LOGIC;
     signal s_ST_instr_served : STD_LOGIC;
     signal b_writeCycleDelay : INTEGER;
-    signal b_reset_ctr : INTEGER;
+    signal b_delayed_rst : STD_LOGIC;
 
 begin
 
@@ -121,8 +121,6 @@ begin
                 r_q <= s_q;
             end if;
             r_PIO <= s_Dout(7 downto 0);
-
-            b_reset_ctr <= b_reset_ctr + 1;
         end if;
     end process;
 
